@@ -1,5 +1,6 @@
 ﻿using Ensek.API.Entities;
 using Ensek.API.Helpers;
+using Ensek.API.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ensek.API.Controllers
@@ -14,16 +15,18 @@ namespace Ensek.API.Controllers
            var fileReader = new FileReader();
            IList<MeterReading> meterReadings = fileReader.ParseToMeterReadings(csv);
            CsvValidator validator = new CsvValidator();
-           IList<MeterReading> validReadings = validator.Validate(meterReadings);
+           IList<MeterReading> passedReadings = validator.Validate(meterReadings);
 
            DatabaseHelper dbController = new DatabaseHelper();
            string source = "Data Source = C:\\Users\\Jake\\source\\repos\\Jake-Gilbert\\EnsekChallenge\\Ensek.db";
-            //C:\Users\Jake\source\repos\Jake-Gilbert\EnsekChallenge
-            IList<int> existingAccountIds =  dbController.GetAccountIds(source);
-           dbController.UploadValidData(source, validReadings, existingAccountIds);
+           IList<int> existingAccountIds =  dbController.GetAccountIds(source);
+            int[] SuccessfulAndFailed = dbController.UploadValidData(source, passedReadings, existingAccountIds);
 
-
-            return Ok("5 good 2 bad");
+            return Ok(new UploadResponse
+            {
+                SuccessfulReadings = SuccessfulAndFailed[0],
+                FailedReadings = validator.InvalidReadings + SuccessfulAndFailed[1]
+            });
         }             
     }
 }

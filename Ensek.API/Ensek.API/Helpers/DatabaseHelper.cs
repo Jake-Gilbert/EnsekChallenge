@@ -31,15 +31,14 @@ namespace Ensek.API.Helpers
             }
             catch (Exception ex)
             {
-                return null;
+                throw new Exception(ex.Message);
             }
         }
 
-        public int[] UploadValidData(string source, IList<MeterReading> validReadings, IList<int> existingAccountIds)
+        public int[] UploadValidData(string source, IList<MeterReading> meterReadings, IList<int> existingAccountIds)
         {
             try
             {
-                // SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_e_sqlite3());
                 string query =
                             @"
                             REPLACE INTO Meter_Readings (AccountId, MeterReadingDateTime, MeterReadValue) 
@@ -51,15 +50,13 @@ namespace Ensek.API.Helpers
                 using (var connection = new SqliteConnection(source))
                 {
                     connection.Open();
-                    using (var command = new SqliteCommand(query, connection))
+                    foreach (MeterReading meterReading in meterReadings)
                     {
-                        foreach (MeterReading meterReading in validReadings)
+                        using (var command = new SqliteCommand(query, connection))
                         {
                             if (int.TryParse(meterReading.MeterReadValue, out int accountId))
                             {
-                                try
-                                {
-                                    if (existingAccountIds.Contains(meterReading.AccountId))
+                                    if (existingAccountIds.Contains(meterReading.AccountId) && int.Parse(meterReading.MeterReadValue) > 0)
                                     {
                                         command.Parameters.Add(new SqliteParameter("@AccountId", meterReading.AccountId));
                                         command.Parameters.Add(new SqliteParameter("@MeterReadingDateTime", meterReading.MeterReadingDateTime));
@@ -67,17 +64,21 @@ namespace Ensek.API.Helpers
 
                                         command.ExecuteNonQuery();
                                         validResults++;
-                                        connection.Close();
                                     }
-                                }
-                                catch
-                                {
-                                    invalidResults++;
-                                    continue;
-                                }
+                                    else
+                                    {
+                                        invalidResults++;
+                                        continue;
+                                    }
                             }
-                        }
+                            else
+                            {
+                                invalidResults++;
+                                continue;
+                            }
+                        }                      
                     }
+                   
                 }
                 successfulAndFailed[0] = validResults;
                 successfulAndFailed[1] = invalidResults;
@@ -85,7 +86,7 @@ namespace Ensek.API.Helpers
             }
             catch (Exception ex)
             {
-                return null;
+                throw new Exception(ex.Message);
             }
         }
     }
