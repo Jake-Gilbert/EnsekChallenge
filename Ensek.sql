@@ -1,0 +1,14 @@
+BEGIN TRANSACTION;
+CREATE TABLE IF NOT EXISTS "Meter_Readings" (
+	"AccountId"	INTEGER NOT NULL UNIQUE,
+	"MeterReadingDateTime"	TEXT NOT NULL,
+	"MeterReadValue"	INTEGER NOT NULL,
+	PRIMARY KEY("AccountId")
+);
+CREATE TABLE IF NOT EXISTS "Test_Accounts" (
+	"AccountId"	INTEGER NOT NULL UNIQUE,
+	"FirstName"	TEXT NOT NULL,
+	"LastName"	TEXT NOT NULL,
+	PRIMARY KEY("AccountId")
+);
+COMMIT;
